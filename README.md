@@ -178,6 +178,13 @@ jscpd и Vitest Coverage в каталог `reports`. Основная точк�
 Для стандартного `GITHUB_TOKEN` в настройках репозитория должны быть включены
 права Actions на запись и создание pull request.
 
+## Агент в GitHub
+
+OpenCode Agent запускается в GitHub Actions по новым комментариям с командами
+`/opencode` или `/oc`. События, фильтр, минимальные права, модель и порядок
+ручной проверки описаны в
+[`docs/agents/opencode-github.md`](docs/agents/opencode-github.md).
+
 ## Документы продукта
 
 - [Исследование пользовательских сценариев](product/research.md)
