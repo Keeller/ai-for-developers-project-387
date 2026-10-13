@@ -1,0 +1,20 @@
+{
+  "name": "@calendar/api-contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run generate",
+    "generate": "npm run generate:openapi && npm run generate:code",
+    "generate:openapi": "tsp compile .",
+    "generate:code": "openapi-ts",
+    "check": "npm run generate && git diff --exit-code -- generated ../../apps/web/src/api/generated ../../apps/api/src/generated"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@typespec/compiler": "^1.17.0",
+    "@typespec/http": "^1.17.0",
+    "@typespec/openapi": "^1.17.0",
+    "@typespec/openapi3": "^1.17.0"
+  }
+}

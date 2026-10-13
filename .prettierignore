@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+reports
+.idea
+.git
+.agents
+AGENTS.md
+packages/api-contract/generated
+apps/api/src/generated
+apps/web/src/api/generated
+.github/workflows/hexlet-check.yml
+.github/workflows/README.md
+Описание проекта.docx

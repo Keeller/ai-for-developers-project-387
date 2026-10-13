@@ -1,0 +1,16 @@
+kind: project
+entrypoint: main.tsp
+warn-as-error: true
+
+emit:
+  - '@typespec/openapi3'
+
+options:
+  '@typespec/openapi3':
+    emitter-output-dir: '{project-root}/generated'
+    output-file: openapi.yaml
+    openapi-versions:
+      - '3.0.0'
+    new-line: lf
+    omit-unreachable-types: true
+    seal-object-schemas: true

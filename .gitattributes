@@ -1,0 +1,3 @@
+packages/api-contract/generated/** text eol=lf
+apps/api/src/generated/** text eol=lf
+apps/web/src/api/generated/** text eol=lf

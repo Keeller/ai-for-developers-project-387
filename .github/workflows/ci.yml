@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: calendar_booking_test
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: calendar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calendar -d calendar_booking_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+
+    env:
+      TEST_DATABASE_URL: postgres://calendar:test@127.0.0.1:5432/calendar_booking_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all checks
+        run: npm run check
+
+      - name: Generate advisory quality reports
+        if: always()
+        run: npm run report
+
+      - name: Upload quality reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-reports
+          path: reports
+          if-no-files-found: warn
+          retention-days: 14
+
+  e2e:
+    name: Browser end-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: calendar_booking_test
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: calendar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U calendar -d calendar_booking_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+
+    env:
+      TEST_DATABASE_URL: postgres://calendar:test@127.0.0.1:5432/calendar_booking_test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report and traces
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+  container:
+    name: Build and smoke-test production stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Start production stack and smoke-test persistence
+        run: |
+          export APP_PORT=3101
+          docker compose --project-name calendar-booking-ci up --build --detach
+
+          for attempt in {1..30}; do
+            health="$(curl --fail --silent http://127.0.0.1:${APP_PORT}/api/health || true)"
+
+            if [ "$health" = '{"status":"ok","service":"calendar-api"}' ]; then
+              curl --fail --silent http://127.0.0.1:${APP_PORT}/ \
+                | grep --fixed-strings '<div id="root"></div>'
+              break
+            fi
+
+            sleep 1
+          done
+
+          test "$health" = '{"status":"ok","service":"calendar-api"}'
+
+          curl --fail --silent \
+            --request POST \
+            --header 'content-type: application/json' \
+            --data '{"publicId":"ci-persistence","name":"CI persistence","durationMinutes":30}' \
+            http://127.0.0.1:${APP_PORT}/api/manage/event-types
+
+          docker compose --project-name calendar-booking-ci restart app
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:${APP_PORT}/api/health >/dev/null; then
+              break
+            fi
+
+            sleep 1
+          done
+
+          curl --fail --silent http://127.0.0.1:${APP_PORT}/api/manage/event-types \
+            | grep --fixed-strings 'ci-persistence'
+
+      - name: Stop production stack
+        if: always()
+        run: docker compose --project-name calendar-booking-ci down --volumes

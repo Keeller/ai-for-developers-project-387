@@ -1,0 +1,6 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Authentication is handled by the MCP client's OAuth flow. Never store
+# Railway access tokens or project secrets in this repository.
+[mcp_servers.railway]
+url = "https://mcp.railway.com"
