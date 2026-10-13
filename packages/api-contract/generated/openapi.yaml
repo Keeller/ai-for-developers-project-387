@@ -1,0 +1,1013 @@
+openapi: 3.0.0
+info:
+  title: Calendar Booking API
+  version: 0.0.0
+tags:
+  - name: Guest
+  - name: Owner
+paths:
+  /api/bookings:
+    post:
+      operationId: guestBookingsCreateBooking
+      description: Atomically create a booking or replay the original idempotent result.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/IdempotencyKey'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Guest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+  /api/event-types:
+    get:
+      operationId: guestEventTypesListPublicEventTypes
+      description: List every published event type.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicEventTypeList'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Guest
+  /api/event-types/{publicId}:
+    get:
+      operationId: guestEventTypesGetPublicEventType
+      description: Return one published event type by its immutable public ID.
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypePublicId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicEventType'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Guest
+  /api/event-types/{publicId}/slots:
+    get:
+      operationId: guestEventTypesListAvailableSlots
+      description: Return free slots in the owner-local fourteen-day booking window.
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypePublicId'
+        - name: guestTimeZone
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/IanaTimeZone'
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotWindow'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Guest
+  /api/health:
+    get:
+      operationId: getHealth
+      description: Return the current API health status.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /api/manage/availability:
+    get:
+      operationId: ownerAvailabilityGetAvailability
+      description: Return the shared weekly availability and calendar timezone.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+    put:
+      operationId: ownerAvailabilityReplaceAvailability
+      description: Replace the shared weekly availability and calendar timezone.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Availability'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReplaceAvailabilityRequest'
+  /api/manage/availability/exceptions:
+    get:
+      operationId: ownerAvailabilityListAvailabilityExceptions
+      description: List every configured dated availability exception.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityExceptionList'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+  /api/manage/availability/exceptions/{date}:
+    put:
+      operationId: ownerAvailabilityPutAvailabilityException
+      description: Create or replace the exception for one owner-local date.
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityException'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutAvailabilityExceptionRequest'
+    delete:
+      operationId: ownerAvailabilityDeleteAvailabilityException
+      description: Delete the exception for one owner-local date.
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+  /api/manage/bookings:
+    get:
+      operationId: ownerBookingsListFutureBookings
+      description: List future bookings across all event types, sorted by start time.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FutureBookingList'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+  /api/manage/event-types:
+    get:
+      operationId: ownerEventTypesListEventTypes
+      description: List published and hidden event types.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventTypeList'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+    post:
+      operationId: ownerEventTypesCreateEventType
+      description: Create a published event type.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventTypeRequest'
+  /api/manage/event-types/{publicId}:
+    get:
+      operationId: ownerEventTypesGetEventType
+      description: Return one event type for management.
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypePublicId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+    patch:
+      operationId: ownerEventTypesUpdateEventType
+      description: Change mutable event type fields or its publication state.
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypePublicId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEventTypeRequest'
+    delete:
+      operationId: ownerEventTypesDeleteEventType
+      description: Permanently delete an event type that has never been booked.
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypePublicId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - Owner
+components:
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+          minLength: 1
+          maxLength: 500
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      additionalProperties:
+        not: {}
+    Availability:
+      type: object
+      required:
+        - timeZone
+        - week
+        - updatedAt
+      properties:
+        timeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+        week:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyAvailabilityDay'
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties:
+        not: {}
+    AvailabilityException:
+      type: object
+      required:
+        - date
+        - mode
+        - intervals
+        - updatedAt
+      properties:
+        date:
+          type: string
+          format: date
+        mode:
+          $ref: '#/components/schemas/AvailabilityExceptionMode'
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityInterval'
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties:
+        not: {}
+    AvailabilityExceptionList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityException'
+      additionalProperties:
+        not: {}
+    AvailabilityExceptionMode:
+      type: string
+      enum:
+        - closed
+        - custom
+    AvailabilityInterval:
+      type: object
+      required:
+        - start
+        - end
+      properties:
+        start:
+          $ref: '#/components/schemas/LocalAvailabilityTime'
+        end:
+          $ref: '#/components/schemas/LocalAvailabilityTime'
+      additionalProperties:
+        not: {}
+    AvailableSlot:
+      type: object
+      required:
+        - startAt
+        - endAt
+        - guestLocalDate
+        - guestLocalStart
+        - guestUtcOffset
+      properties:
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        guestLocalDate:
+          type: string
+          format: date
+        guestLocalStart:
+          type: string
+          format: time
+        guestUtcOffset:
+          type: string
+          pattern: ^[+-][0-9]{2}:[0-9]{2}$
+      additionalProperties:
+        not: {}
+    Booking:
+      type: object
+      required:
+        - id
+        - eventType
+        - startAt
+        - endAt
+        - guest
+        - createdAt
+      properties:
+        id:
+          $ref: '#/components/schemas/BookingId'
+        eventType:
+          $ref: '#/components/schemas/BookingEventSnapshot'
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+        guest:
+          $ref: '#/components/schemas/GuestContact'
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties:
+        not: {}
+    BookingEventSnapshot:
+      type: object
+      required:
+        - publicId
+        - name
+        - durationMinutes
+      properties:
+        publicId:
+          $ref: '#/components/schemas/EventTypePublicId'
+        name:
+          $ref: '#/components/schemas/EventTypeName'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+      additionalProperties:
+        not: {}
+    BookingId:
+      type: string
+      format: uuid
+    CreateBookingRequest:
+      type: object
+      required:
+        - eventTypePublicId
+        - startAt
+        - guestName
+        - guestEmail
+        - guestTimeZone
+      properties:
+        eventTypePublicId:
+          $ref: '#/components/schemas/EventTypePublicId'
+        startAt:
+          type: string
+          format: date-time
+        guestName:
+          $ref: '#/components/schemas/GuestName'
+        guestEmail:
+          $ref: '#/components/schemas/GuestEmail'
+        guestTimeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+      additionalProperties:
+        not: {}
+    CreateEventTypeRequest:
+      type: object
+      required:
+        - publicId
+        - name
+        - durationMinutes
+      properties:
+        publicId:
+          $ref: '#/components/schemas/EventTypePublicId'
+        name:
+          $ref: '#/components/schemas/EventTypeName'
+        description:
+          $ref: '#/components/schemas/EventTypeDescription'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+      additionalProperties:
+        not: {}
+    DurationMinutes:
+      type: number
+      enum:
+        - 15
+        - 30
+        - 45
+        - 60
+        - 75
+        - 90
+        - 105
+        - 120
+        - 135
+        - 150
+        - 165
+        - 180
+        - 195
+        - 210
+        - 225
+        - 240
+        - 255
+        - 270
+        - 285
+        - 300
+        - 315
+        - 330
+        - 345
+        - 360
+        - 375
+        - 390
+        - 405
+        - 420
+        - 435
+        - 450
+        - 465
+        - 480
+    ErrorCode:
+      type: string
+      enum:
+        - validation_error
+        - not_found
+        - duplicate_public_id
+        - event_type_has_bookings
+        - event_type_unavailable
+        - slot_unavailable
+        - idempotency_mismatch
+        - internal_error
+    EventType:
+      type: object
+      required:
+        - publicId
+        - name
+        - durationMinutes
+        - publicationState
+        - createdAt
+        - updatedAt
+      properties:
+        publicId:
+          $ref: '#/components/schemas/EventTypePublicId'
+        name:
+          $ref: '#/components/schemas/EventTypeName'
+        description:
+          $ref: '#/components/schemas/EventTypeDescription'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+        publicationState:
+          $ref: '#/components/schemas/EventTypePublicationState'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      additionalProperties:
+        not: {}
+    EventTypeDescription:
+      type: string
+      maxLength: 500
+    EventTypeList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+      additionalProperties:
+        not: {}
+    EventTypeName:
+      type: string
+      minLength: 3
+      maxLength: 80
+    EventTypePublicId:
+      type: string
+      minLength: 3
+      maxLength: 64
+      pattern: ^[a-z0-9](?:[a-z0-9-]{1,62}[a-z0-9])?$
+    EventTypePublicationState:
+      type: string
+      enum:
+        - published
+        - hidden
+    FutureBookingList:
+      type: object
+      required:
+        - calendarTimeZone
+        - items
+      properties:
+        calendarTimeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Booking'
+      additionalProperties:
+        not: {}
+    GuestContact:
+      type: object
+      required:
+        - name
+        - email
+        - timeZone
+      properties:
+        name:
+          $ref: '#/components/schemas/GuestName'
+        email:
+          $ref: '#/components/schemas/GuestEmail'
+        timeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+      additionalProperties:
+        not: {}
+    GuestEmail:
+      type: string
+      minLength: 1
+      maxLength: 512
+    GuestName:
+      type: string
+      minLength: 1
+      maxLength: 200
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+        service:
+          type: string
+          enum:
+            - calendar-api
+      additionalProperties:
+        not: {}
+      description: The API process is ready to receive requests.
+    IanaTimeZone:
+      type: string
+      minLength: 1
+      maxLength: 255
+    IdempotencyKey:
+      type: string
+      minLength: 16
+      maxLength: 128
+    LocalAvailabilityTime:
+      type: string
+      pattern: ^(?:[01][0-9]|2[0-3]):(?:00|15|30|45)$
+    PublicEventType:
+      type: object
+      required:
+        - publicId
+        - name
+        - durationMinutes
+      properties:
+        publicId:
+          $ref: '#/components/schemas/EventTypePublicId'
+        name:
+          $ref: '#/components/schemas/EventTypeName'
+        description:
+          $ref: '#/components/schemas/EventTypeDescription'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+      additionalProperties:
+        not: {}
+    PublicEventTypeList:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicEventType'
+      additionalProperties:
+        not: {}
+    PutAvailabilityExceptionRequest:
+      type: object
+      required:
+        - mode
+        - intervals
+      properties:
+        mode:
+          $ref: '#/components/schemas/AvailabilityExceptionMode'
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityInterval'
+      additionalProperties:
+        not: {}
+    ReplaceAvailabilityRequest:
+      type: object
+      required:
+        - timeZone
+        - week
+      properties:
+        timeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+        week:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyAvailabilityDay'
+      additionalProperties:
+        not: {}
+    SlotDay:
+      type: object
+      required:
+        - ownerDate
+        - slots
+      properties:
+        ownerDate:
+          type: string
+          format: date
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableSlot'
+      additionalProperties:
+        not: {}
+    SlotWindow:
+      type: object
+      required:
+        - eventType
+        - ownerTimeZone
+        - guestTimeZone
+        - slotStepMinutes
+        - horizonStartsOn
+        - horizonEndsOn
+        - generatedAt
+        - days
+      properties:
+        eventType:
+          $ref: '#/components/schemas/PublicEventType'
+        ownerTimeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+        guestTimeZone:
+          $ref: '#/components/schemas/IanaTimeZone'
+        slotStepMinutes:
+          type: number
+          enum:
+            - 30
+          description: Minutes between consecutive candidate Slot starts.
+        horizonStartsOn:
+          type: string
+          format: date
+        horizonEndsOn:
+          type: string
+          format: date
+        generatedAt:
+          type: string
+          format: date-time
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlotDay'
+      additionalProperties:
+        not: {}
+    UpdateEventTypeRequest:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/EventTypeName'
+        description:
+          $ref: '#/components/schemas/EventTypeDescription'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+        publicationState:
+          $ref: '#/components/schemas/EventTypePublicationState'
+      additionalProperties:
+        not: {}
+    Weekday:
+      type: string
+      enum:
+        - monday
+        - tuesday
+        - wednesday
+        - thursday
+        - friday
+        - saturday
+        - sunday
+    WeeklyAvailabilityDay:
+      type: object
+      required:
+        - weekday
+        - enabled
+        - intervals
+      properties:
+        weekday:
+          $ref: '#/components/schemas/Weekday'
+        enabled:
+          type: boolean
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityInterval'
+      additionalProperties:
+        not: {}
+servers:
+  - url: http://127.0.0.1:3000
+    description: Local development
+    variables: {}

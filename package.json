@@ -1,0 +1,54 @@
+{
+  "name": "calendar-booking",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "npm@11.5.1",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors blue,magenta \"npm run dev --workspace @calendar/api\" \"npm run dev --workspace @calendar/web\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:e2e": "npm run build && playwright test",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "contract:generate": "npm run generate --workspace @calendar/api-contract",
+    "contract:check": "npm run check --workspace @calendar/api-contract",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "npm run lint -- --fix",
+    "report": "node scripts/generate-quality-report.mjs",
+    "report:eslint": "eslint apps --config eslint.quality.config.js",
+    "report:dead-code": "knip --no-exit-code --no-progress",
+    "report:duplicates": "jscpd apps --pattern \"**/*.{ts,tsx}\" --ignore \"**/*.test.ts,**/*.test.tsx,**/dist/**,api/src/generated/**,web/src/api/generated/**\" --min-lines 5 --min-tokens 50 --reporters console --no-colors --no-tips",
+    "docker:build": "docker build --tag calendar-booking:local .",
+    "docker:run": "docker compose up",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "check": "npm run contract:check && npm run format:check && npm run lint && npm run test:coverage && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "@vitest/coverage-v8": "^5.0.3",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.12.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "eslint-plugin-sonarjs": "^4.2.2",
+    "globals": "^17.13.0",
+    "jscpd": "^5.4.1",
+    "knip": "^6.41.0",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^5.0.3"
+  }
+}
