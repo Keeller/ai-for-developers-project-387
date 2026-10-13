@@ -1,0 +1,39 @@
+name: OpenCode issue triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Triage issue with OpenCode
+        uses: anomalyco/opencode/github@latest
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+        with:
+          model: ollama-cloud/kimi-k2.7-code
+          share: false
+          prompt: |
+            Perform technical triage for this newly opened issue. Read the issue
+            as a user report and inspect this public repository before answering.
+
+            Reply in Russian with:
+            - the probable cause, clearly marking assumptions;
+            - the affected application areas and concrete files;
+            - a proposed implementation path;
+            - tests and acceptance criteria needed to consider the issue fixed;
+            - focused clarification questions only when the repository and issue
+              do not contain enough evidence.
+
+            Do not edit files, create a branch or pull request, or close the issue.
