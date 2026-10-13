@@ -133,12 +133,16 @@ jobs:
           retention-days: 30
 
       - name: Analyze report with OpenCode
-        timeout-minutes: 12
+        id: opencode
+        continue-on-error: true
+        timeout-minutes: 5
         uses: anomalyco/opencode/github@latest
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: ollama-cloud/kimi-k2.7-code
+          use_github_token: true
           share: false
           prompt: |
             Analyze the compact reports/summary.md from this scheduled
@@ -165,3 +169,62 @@ jobs:
             artifact name lighthouse-report-${{ github.run_number }}, impact,
             a proposed direction, and measurable acceptance criteria. Make clear
             that maintainers decide whether and when to implement the change.
+
+      - name: Publish fallback finding
+        if: steps.opencode.outcome != 'success'
+        uses: actions/github-script@v7
+        env:
+          AUDIT_SUMMARY_PATH: reports/summary.md
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('node:fs');
+            const summary = fs.readFileSync(
+              process.env.AUDIT_SUMMARY_PATH,
+              'utf8',
+            );
+            const runUrl =
+              `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactName = `lighthouse-report-${context.runNumber}`;
+            const body = [
+              '<!-- scheduled-lighthouse-audit-fallback -->',
+              'OpenCode не завершил анализ за отведённое время.',
+              'Сводка проверки сохранена автоматически, полный JSON/HTML доступен в артефакте.',
+              '',
+              `- Run: ${runUrl}`,
+              `- Artifact: ${artifactName}`,
+              '',
+              summary,
+            ].join('\n');
+
+            const openItems = await github.paginate(
+              github.rest.issues.listForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100,
+              },
+            );
+            const lighthouseIssue = openItems.find(
+              (item) =>
+                !item.pull_request &&
+                item.title.toLowerCase().includes('lighthouse'),
+            );
+
+            if (lighthouseIssue) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: lighthouseIssue.number,
+                body,
+              });
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Lighthouse: результаты регулярной проверки',
+              body,
+            });
