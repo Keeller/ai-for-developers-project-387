@@ -577,6 +577,14 @@ async function findBookingByIdempotencyKey(
   return result.rows[0]
 }
 
+async function findBookingById(database: Queryable, id: string) {
+  const result = await database.query<BookingRow>(
+    `SELECT ${bookingColumns} FROM bookings WHERE id = $1`,
+    [id],
+  )
+  return result.rows[0]
+}
+
 type BookingGuest = {
   email: string
   name: string
@@ -662,6 +670,22 @@ export function createServiceHandlers(
         status: 'ok',
         service: 'calendar-api',
       })
+    },
+    async guestBookingsGetBooking(request, reply) {
+      if (database === undefined) {
+        return reply.code(503).send(databaseUnavailable)
+      }
+
+      const booking = await findBookingById(database, request.params.id)
+
+      if (booking === undefined) {
+        return reply.code(404).send({
+          code: 'not_found',
+          message: 'Бронирование не найдено.',
+        })
+      }
+
+      return reply.code(200).send(toBooking(booking))
     },
     async guestBookingsCreateBooking(request, reply) {
       if (database === undefined) {

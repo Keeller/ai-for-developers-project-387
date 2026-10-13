@@ -185,6 +185,88 @@ describe('Бронирования through real HTTP and PostgreSQL', () => {
     }
   })
 
+  it('возвращает Бронирование по ID и 404 для отсутствующего', async () => {
+    const run = await startApp()
+
+    try {
+      await fetch(`${run.baseUrl}/api/manage/event-types`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          publicId: 'get-by-id-call',
+          name: 'Звонок по ID',
+          durationMinutes: 30,
+        }),
+      })
+      const weekdays = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ]
+      await fetch(`${run.baseUrl}/api/manage/availability`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          timeZone: 'Europe/Moscow',
+          week: weekdays.map((weekday) => ({
+            weekday,
+            enabled: weekday === 'monday',
+            intervals:
+              weekday === 'monday' ? [{ start: '09:00', end: '12:00' }] : [],
+          })),
+        }),
+      })
+
+      const createResponse = await fetch(`${run.baseUrl}/api/bookings`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'idempotency-key': randomUUID(),
+        },
+        body: JSON.stringify({
+          eventTypePublicId: 'get-by-id-call',
+          startAt: '2026-10-12T06:00:00.000Z',
+          guestName: 'Анна',
+          guestEmail: 'anna@example.com',
+          guestTimeZone: 'Europe/Moscow',
+        }),
+      })
+      const created = (await createResponse.json()) as { id: string }
+
+      const getResponse = await fetch(
+        `${run.baseUrl}/api/bookings/${created.id}`,
+      )
+      expect(getResponse.status).toBe(200)
+      await expect(getResponse.json()).resolves.toMatchObject({
+        id: created.id,
+        eventType: {
+          publicId: 'get-by-id-call',
+          name: 'Звонок по ID',
+          durationMinutes: 30,
+        },
+        guest: {
+          name: 'Анна',
+          email: 'anna@example.com',
+          timeZone: 'Europe/Moscow',
+        },
+      })
+
+      const missingResponse = await fetch(
+        `${run.baseUrl}/api/bookings/0199d884-cd26-7000-8000-000000000000`,
+      )
+      expect(missingResponse.status).toBe(404)
+      await expect(missingResponse.json()).resolves.toMatchObject({
+        code: 'not_found',
+      })
+    } finally {
+      await run.app.close()
+    }
+  })
+
   it('показывает Владельцу будущие Бронирования со snapshot Типа события', async () => {
     const run = await startApp()
 

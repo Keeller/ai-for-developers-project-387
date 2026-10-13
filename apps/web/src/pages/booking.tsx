@@ -17,10 +17,11 @@ import {
   useState,
   type SyntheticEvent,
 } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import {
   guestBookingsCreateBooking,
+  guestBookingsGetBooking,
   guestEventTypesGetPublicEventType,
   guestEventTypesListAvailableSlots,
   guestEventTypesListPublicEventTypes,
@@ -178,9 +179,7 @@ export function BookingPage() {
     setSubmitting(false)
 
     if (result.data !== undefined) {
-      await navigate(`/book/${publicId}/success`, {
-        state: { booking: result.data },
-      })
+      await navigate(`/book/${publicId}/success/${result.data.id}`)
       return
     }
 
@@ -302,10 +301,41 @@ export function BookingPage() {
 }
 
 export function BookingSuccessPage() {
-  const location = useLocation()
-  const booking = (location.state as { booking?: Booking } | null)?.booking
+  const { bookingId = '' } = useParams()
+  const [booking, setBooking] = useState<Booking | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  if (booking === undefined) {
+  useEffect(() => {
+    let active = true
+
+    async function load() {
+      const result = await guestBookingsGetBooking({ path: { id: bookingId } })
+
+      if (!active) return
+
+      setLoading(false)
+
+      if (result.data !== undefined) {
+        setBooking(result.data)
+      }
+    }
+
+    void load()
+
+    return () => {
+      active = false
+    }
+  }, [bookingId])
+
+  if (loading) {
+    return (
+      <PublicShell>
+        <Loader aria-label="Загрузка подтверждения" />
+      </PublicShell>
+    )
+  }
+
+  if (booking === null) {
     return (
       <PublicShell>
         <Title order={1}>Подтверждение недоступно</Title>

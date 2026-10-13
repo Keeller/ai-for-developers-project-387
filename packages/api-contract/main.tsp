@@ -346,6 +346,15 @@ interface GuestBookings {
     | NotFound
     | Conflict
     | ServiceUnavailable;
+
+  /** Return a previously created booking by its immutable ID. */
+  @operationId("guestBookingsGetBooking")
+  @route("/{id}")
+  @get
+  op getBooking(@path id: BookingId):
+    | Ok<Booking>
+    | NotFound
+    | ServiceUnavailable;
 }
 
 @tag("Owner")
