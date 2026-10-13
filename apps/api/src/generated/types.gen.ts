@@ -253,6 +253,37 @@ export type GuestBookingsCreateBookingResponses = {
 
 export type GuestBookingsCreateBookingResponse = GuestBookingsCreateBookingResponses[keyof GuestBookingsCreateBookingResponses];
 
+export type GuestBookingsGetBookingData = {
+    body?: never;
+    path: {
+        id: BookingId;
+    };
+    query?: never;
+    url: '/api/bookings/{id}';
+};
+
+export type GuestBookingsGetBookingErrors = {
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ApiError;
+    /**
+     * Service unavailable.
+     */
+    503: ApiError;
+};
+
+export type GuestBookingsGetBookingError = GuestBookingsGetBookingErrors[keyof GuestBookingsGetBookingErrors];
+
+export type GuestBookingsGetBookingResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Booking;
+};
+
+export type GuestBookingsGetBookingResponse = GuestBookingsGetBookingResponses[keyof GuestBookingsGetBookingResponses];
+
 export type GuestEventTypesListPublicEventTypesData = {
     body?: never;
     path?: never;

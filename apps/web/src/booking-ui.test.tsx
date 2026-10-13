@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import {
   guestBookingsCreateBooking,
+  guestBookingsGetBooking,
   guestEventTypesGetPublicEventType,
   guestEventTypesListAvailableSlots,
   guestEventTypesListPublicEventTypes,
@@ -19,6 +20,7 @@ import {
 
 vi.mock('./api/client', () => ({
   guestBookingsCreateBooking: vi.fn(),
+  guestBookingsGetBooking: vi.fn(),
   guestEventTypesGetPublicEventType: vi.fn(),
   guestEventTypesListAvailableSlots: vi.fn(),
   guestEventTypesListPublicEventTypes: vi.fn(),
@@ -129,6 +131,25 @@ describe('публичное Бронирование', () => {
       },
       error: undefined,
     })
+    vi.mocked(guestBookingsGetBooking).mockResolvedValue({
+      data: {
+        id: '0199d884-cd26-7000-8000-000000000001',
+        eventType: {
+          publicId: 'discovery-call',
+          name: 'Знакомство',
+          durationMinutes: 30,
+        },
+        startAt: '2026-10-12T09:00:00Z',
+        endAt: '2026-10-12T09:30:00Z',
+        guest: {
+          name: 'Анна',
+          email: 'anna@example.com',
+          timeZone: 'Europe/Moscow',
+        },
+        createdAt: '2026-10-12T05:01:00Z',
+      },
+      error: undefined,
+    })
 
     renderApp('/book')
     await user.click(await screen.findByRole('link', { name: /Знакомство/ }))
@@ -145,6 +166,39 @@ describe('публичное Бронирование', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Знакомство')).toBeInTheDocument()
     expect(screen.getByText(/Europe\/Moscow/)).toBeInTheDocument()
+  })
+
+  it('загружает подтверждение при прямом переходе по ссылке', async () => {
+    vi.mocked(guestBookingsGetBooking).mockResolvedValue({
+      data: {
+        id: '0199d884-cd26-7000-8000-000000000001',
+        eventType: {
+          publicId: 'discovery-call',
+          name: 'Знакомство',
+          durationMinutes: 30,
+        },
+        startAt: '2026-10-12T09:00:00Z',
+        endAt: '2026-10-12T09:30:00Z',
+        guest: {
+          name: 'Анна',
+          email: 'anna@example.com',
+          timeZone: 'Europe/Moscow',
+        },
+        createdAt: '2026-10-12T05:01:00Z',
+      },
+      error: undefined,
+    })
+
+    renderApp(
+      '/book/discovery-call/success/0199d884-cd26-7000-8000-000000000001',
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: 'Бронирование подтверждено' }),
+    ).toBeInTheDocument()
+    expect(guestBookingsGetBooking).toHaveBeenCalledWith({
+      path: { id: '0199d884-cd26-7000-8000-000000000001' },
+    })
   })
 
   it('сохраняет контакты и обновляет Слоты после конфликта Бронирования', async () => {
@@ -305,11 +359,38 @@ describe('публичное Бронирование', () => {
     expect(ownerBookingsListFutureBookings).toHaveBeenCalledTimes(2)
   })
 
-  it('не показывает подтверждение без данных Бронирования', () => {
-    renderApp('/book/discovery-call/success')
+  it('не показывает подтверждение без данных Бронирования', async () => {
+    vi.mocked(guestBookingsGetBooking).mockResolvedValue({
+      data: undefined,
+      error: {
+        code: 'not_found',
+        message: 'Бронирование не найдено.',
+      },
+    })
+
+    renderApp(
+      '/book/discovery-call/success/0199d884-cd26-7000-8000-000000000000',
+    )
 
     expect(
-      screen.getByRole('heading', { name: 'Подтверждение недоступно' }),
+      await screen.findByRole('heading', { name: 'Подтверждение недоступно' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Выбрать Тип события' }),
+    ).toHaveAttribute('href', '/book')
+  })
+
+  it('показывает «Подтверждение недоступно» при сетевой ошибке загрузки', async () => {
+    vi.mocked(guestBookingsGetBooking).mockRejectedValue(
+      new Error('Network error'),
+    )
+
+    renderApp(
+      '/book/discovery-call/success/0199d884-cd26-7000-8000-000000000000',
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: 'Подтверждение недоступно' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Выбрать Тип события' }),

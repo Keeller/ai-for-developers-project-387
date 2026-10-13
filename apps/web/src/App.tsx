@@ -131,7 +131,10 @@ export default function App() {
       <Route element={<HomePage />} path="/" />
       <Route element={<PublicEventTypesPage />} path="/book" />
       <Route element={<BookingPage />} path="/book/:publicId" />
-      <Route element={<BookingSuccessPage />} path="/book/:publicId/success" />
+      <Route
+        element={<BookingSuccessPage />}
+        path="/book/:publicId/success/:bookingId"
+      />
       <Route element={<OwnerDashboardPage />} path="/manage" />
       <Route element={<ManageEventTypesPage />} path="/manage/event-types" />
       <Route element={<NewEventTypePage />} path="/manage/event-types/new" />

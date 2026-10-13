@@ -147,8 +147,47 @@ test('TC-E2E-10: Владелец видит Бронирование в общ�
   await expect(booking).toContainText(/—/)
 })
 
-test('TC-E2E-11: подтверждение нельзя открыть напрямую', async ({ page }) => {
-  await page.goto('/book/unknown-call/success')
+test('TC-E2E-11: подтверждение восстанавливается по прямой ссылке', async ({
+  page,
+  request,
+}) => {
+  await createEventType(request, {
+    publicId: 'direct-call',
+    name: 'Прямой разговор',
+    durationMinutes: 30,
+  })
+  await makeEveryDayAvailable(request)
+
+  await openBookingForm(page, {
+    publicId: 'direct-call',
+    name: 'Прямой разговор',
+  })
+  await submitBooking(page, {
+    name: 'Анна',
+    email: 'anna@example.com',
+  })
+  await expect(
+    page.getByRole('heading', { name: 'Бронирование подтверждено' }),
+  ).toBeVisible()
+
+  const confirmationUrl = page.url()
+  expect(confirmationUrl).toMatch(/\/book\/direct-call\/success\/[^/]+$/)
+
+  await page.goto('/')
+  await page.goto(confirmationUrl)
+
+  await expect(
+    page.getByRole('heading', { name: 'Бронирование подтверждено' }),
+  ).toBeVisible()
+  await expect(page.getByText('Прямой разговор', { exact: true })).toBeVisible()
+  await expect(page.getByText('30 минут', { exact: true })).toBeVisible()
+  await expect(page.getByText('Часовой пояс: Europe/Moscow')).toBeVisible()
+})
+
+test('TC-E2E-11 (неизвестное Бронирование): показано состояние «недоступно»', async ({
+  page,
+}) => {
+  await page.goto('/book/unknown-call/success/unknown-booking-id')
 
   await expect(
     page.getByRole('heading', { name: 'Подтверждение недоступно' }),
