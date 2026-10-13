@@ -47,3 +47,20 @@ Workflow `.github/workflows/opencode-triage.yml` запускается толь
 по-русски: фиксирует вероятную причину, затронутые области и файлы, путь
 исправления, тесты и критерии приёмки. Автотриаж не изменяет код, не создаёт
 ветки или pull request и не закрывает issue.
+
+## Автоматическое ревью pull request
+
+Workflow `.github/workflows/opencode-review.yml` запускается для событий
+`opened`, `synchronize`, `reopened` и `ready_for_review` у недрафтовых pull
+request. Проектный `prompt` требует проверить постановку, контракт, использование
+сгенерированного SDK, серверные правила, тесты, типы и безопасность.
+
+Для чтения кода и контекста используются права `contents: read`, `issues: read`
+и токен раннера через `use_github_token: true`. Право `pull-requests: write`
+нужно только для публикации результата в обсуждении pull request; workflow не
+может изменять код репозитория или самостоятельно сливать pull request.
+
+Workflow явно пропускает только авторов с `author_association` `OWNER`,
+`MEMBER` или `COLLABORATOR`. После этого OpenCode выполняет собственную
+проверку прав автора. Pull request от остальных авторов, включая ботов без
+права записи, остаются на ручном ревью.
