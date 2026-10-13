@@ -309,14 +309,23 @@ export function BookingSuccessPage() {
     let active = true
 
     async function load() {
-      const result = await guestBookingsGetBooking({ path: { id: bookingId } })
+      try {
+        const result = await guestBookingsGetBooking({
+          path: { id: bookingId },
+        })
 
-      if (!active) return
+        if (!active) return
 
-      setLoading(false)
+        setLoading(false)
 
-      if (result.data !== undefined) {
-        setBooking(result.data)
+        if (result.data !== undefined) {
+          setBooking(result.data)
+        }
+      } catch {
+        if (!active) return
+
+        setLoading(false)
+        setBooking(null)
       }
     }
 

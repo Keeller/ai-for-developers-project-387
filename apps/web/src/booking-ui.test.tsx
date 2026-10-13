@@ -379,4 +379,21 @@ describe('публичное Бронирование', () => {
       screen.getByRole('link', { name: 'Выбрать Тип события' }),
     ).toHaveAttribute('href', '/book')
   })
+
+  it('показывает «Подтверждение недоступно» при сетевой ошибке загрузки', async () => {
+    vi.mocked(guestBookingsGetBooking).mockRejectedValue(
+      new Error('Network error'),
+    )
+
+    renderApp(
+      '/book/discovery-call/success/0199d884-cd26-7000-8000-000000000000',
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: 'Подтверждение недоступно' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Выбрать Тип события' }),
+    ).toHaveAttribute('href', '/book')
+  })
 })
