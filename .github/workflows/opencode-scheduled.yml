@@ -23,15 +23,16 @@ jobs:
       PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Use Node.js 24
-        uses: actions/setup-node@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: .nvmrc
+          cache: npm
 
       - name: Validate public application URL
         shell: bash
@@ -59,10 +60,17 @@ jobs:
           import { readFileSync, writeFileSync } from "node:fs";
 
           const report = JSON.parse(readFileSync("reports/lighthouse.report.json", "utf8"));
+          const categoriesById = report.categories ?? {};
+          const auditsById = report.audits ?? {};
           const categoryNames = ["performance", "accessibility", "best-practices", "seo"];
           const categories = categoryNames.map((name) => {
-            const category = report.categories[name];
-            return `- ${category.title}: ${Math.round(category.score * 100)}`;
+            const category = categoriesById[name];
+            const title = category?.title ?? name;
+            const score =
+              typeof category?.score === "number"
+                ? Math.round(category.score * 100)
+                : "n/a";
+            return `- ${title}: ${score}`;
           });
           const metricIds = [
             "first-contentful-paint",
@@ -72,24 +80,27 @@ jobs:
             "speed-index",
           ];
           const metrics = metricIds.map((id) => {
-            const audit = report.audits[id];
-            return `- ${audit.title}: ${audit.displayValue}`;
+            const audit = auditsById[id];
+            return `- ${audit?.title ?? id}: ${audit?.displayValue ?? "n/a"}`;
           });
-          const opportunities = Object.values(report.audits)
+          const opportunities = Object.values(auditsById)
             .filter((audit) =>
-              audit.details?.type === "opportunity" &&
+              audit?.details?.type === "opportunity" &&
               typeof audit.score === "number" &&
               audit.score < 1
             )
             .sort((left, right) => (right.numericValue ?? 0) - (left.numericValue ?? 0))
             .slice(0, 5)
-            .map((audit) => `- ${audit.title}: ${audit.displayValue ?? "action recommended"}`);
+            .map((audit) => `- ${audit.title ?? audit.id}: ${audit.displayValue ?? "action recommended"}`);
+          const measuredUrl =
+            report.finalDisplayedUrl ?? process.env.PUBLIC_APP_URL ?? "unknown";
+          const collectedAt = report.fetchTime ?? new Date().toISOString();
 
           const lines = [
             "# Scheduled Lighthouse audit",
             "",
-            `- URL: ${report.finalDisplayedUrl}`,
-            `- Collected at: ${report.fetchTime}`,
+            `- URL: ${measuredUrl}`,
+            `- Collected at: ${collectedAt}`,
             "",
             "## Category scores",
             "",
@@ -111,7 +122,7 @@ jobs:
           cat reports/summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Lighthouse reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: lighthouse-report-${{ github.run_number }}
           path: |
