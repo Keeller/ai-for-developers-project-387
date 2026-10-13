@@ -27,6 +27,6 @@ jobs:
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         with:
-          model: ollama/kimi-k2.7-code
+          model: ollama-cloud/kimi-k2.7-code
           mentions: /opencode,/oc
           share: false

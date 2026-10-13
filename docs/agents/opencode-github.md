@@ -22,7 +22,7 @@ Workflow получает только `id-token: write`. OIDC-токен обм
 установленного GitHub App, поэтому токен раннера не сохраняется в рабочей копии:
 `actions/checkout` использует `persist-credentials: false`.
 
-Модель `ollama/kimi-k2.7-code` работает через Ollama Cloud. Настройки провайдера
+Модель `ollama-cloud/kimi-k2.7-code` работает через Ollama Cloud. Настройки провайдера
 лежат в корневом `opencode.jsonc`, а ключ передаётся только через секрет
 репозитория `OLLAMA_API_KEY`. Значение секрета никогда не записывается в файлы
 или историю Git. Публикация сессии отключена параметром `share: false`.
