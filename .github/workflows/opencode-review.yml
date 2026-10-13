@@ -1,0 +1,48 @@
+name: OpenCode pull request review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Review pull request with OpenCode
+        uses: anomalyco/opencode/github@latest
+        env:
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: ollama-cloud/kimi-k2.7-code
+          use_github_token: true
+          share: false
+          prompt: |
+            Review this pull request as a read-only reviewer. Read AGENTS.md,
+            the linked issue, and the changed files before reporting findings.
+
+            Focus on:
+            - correctness and regressions against the linked issue;
+            - design-first API changes and regenerated contract artifacts;
+            - frontend API access through the generated SDK;
+            - server-side enforcement of booking rules and error handling;
+            - strict TypeScript, tests at changed boundaries, and maintainability;
+            - security or accidental secret exposure.
+
+            Report only actionable findings in Russian. For every finding include
+            severity, file and line when possible, impact, and a concrete fix.
+            If there are no actionable findings, say so explicitly. Do not edit
+            files, approve, merge, or close the pull request.
