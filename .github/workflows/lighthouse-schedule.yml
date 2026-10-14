@@ -12,12 +12,14 @@ concurrency:
 
 jobs:
   audit:
+    if: >-
+      !endsWith(github.actor, '[bot]') &&
+      github.actor != 'opencode-agent'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       id-token: write
-      contents: write
-      pull-requests: write
+      contents: read
       issues: write
     env:
       PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}
@@ -142,6 +144,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: ollama-cloud/kimi-k2.7-code
+          agent: build
           use_github_token: true
           share: false
           prompt: |

@@ -6,6 +6,13 @@ on:
 
 jobs:
   triage:
+    if: >-
+      github.event.issue.user.type != 'Bot' &&
+      github.event.issue.user.login != 'opencode-agent[bot]' &&
+      contains(
+        fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+        github.event.issue.author_association
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -23,6 +30,7 @@ jobs:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         with:
           model: ollama-cloud/kimi-k2.7-code
+          agent: plan
           share: false
           prompt: |
             Perform technical triage for this newly opened issue. Read the issue

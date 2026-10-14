@@ -8,6 +8,8 @@ jobs:
   review:
     if: >-
       github.event.pull_request.draft == false &&
+      github.event.pull_request.user.type != 'Bot' &&
+      github.event.pull_request.user.login != 'opencode-agent[bot]' &&
       contains(
         fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
         github.event.pull_request.author_association
@@ -17,7 +19,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      pull-requests: write
+      pull-requests: read
       issues: read
     steps:
       - name: Checkout repository
@@ -33,6 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: ollama-cloud/kimi-k2.7-code
+          agent: plan
           use_github_token: true
           share: false
           prompt: |
