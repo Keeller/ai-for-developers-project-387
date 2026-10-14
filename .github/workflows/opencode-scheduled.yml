@@ -2,7 +2,7 @@ name: Scheduled Lighthouse audit
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '27 10 * * *'
       timezone: 'Europe/Moscow'
   workflow_dispatch:
 
