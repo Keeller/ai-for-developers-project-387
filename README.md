@@ -195,7 +195,7 @@ Ollama Cloud. `variant` не задаётся: у кастомных описа�
 | [`opencode.yml`](.github/workflows/opencode.yml)                       | Новый комментарий в issue, PR или diff; только `OWNER`, `MEMBER`, `COLLABORATOR`; команда строго `/oc` или `/oc …` | `ollama-cloud/kimi-k2.7-code` | `build` | Ответ, план или изменение по явной команде доверенного участника | [OpenCode agent](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode.yml)                        |
 | [`opencode-triage.yml`](.github/workflows/opencode-triage.yml)         | Новая issue от `OWNER`, `MEMBER` или `COLLABORATOR`                                                                | `ollama-cloud/glm-5.3-flash`  | `plan`  | Read-only технический разбор пользовательской жалобы             | [OpenCode issue triage](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-triage.yml)          |
 | [`opencode-review.yml`](.github/workflows/opencode-review.yml)         | Новый или обновлённый недрафтовый PR доверенного участника из этого же репозитория                                 | `ollama-cloud/kimi-k2.7-code` | `plan`  | Read-only проверка изменений по проектным критериям              | [OpenCode pull request review](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-review.yml)   |
-| [`lighthouse-schedule.yml`](.github/workflows/lighthouse-schedule.yml) | Ежедневно в 06:17 `Europe/Moscow` или вручную участником с write-доступом                                          | `ollama-cloud/glm-5.3-flash`  | `build` | Lighthouse, artifact и создание/обновление issue по находке      | [Scheduled Lighthouse audit](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/lighthouse-schedule.yml) |
+| [`lighthouse-schedule.yml`](.github/workflows/lighthouse-schedule.yml) | Ежедневно в 06:17 `Europe/Moscow` или вручную участником с write-доступом                                          | `ollama-cloud/glm-5.3-flash`  | `build` | Lighthouse, artifact, issue и безопасный PR для простой находки  | [Scheduled Lighthouse audit](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/lighthouse-schedule.yml) |
 
 Пользовательские события от bot-аккаунтов и отдельно от OpenCode App
 отсекаются в каждом workflow до запуска агента. Это исключает петлю, когда
@@ -210,12 +210,14 @@ bot-обновления. Авторевью проверяет и инициа�
 Lighthouse дополнительно ограничен штатным write-доступом GitHub Actions и
 фильтром bot-аккаунтов.
 
-Права выдаются каждому workflow отдельно. Интерактивный workflow и triage
-получают только `id-token: write`. Авторевью читает `contents` и `issues`, а
+Права выдаются каждому workflow отдельно, и во всех агентных workflow включён
+`id-token: write` для OIDC-аутентификации. Интерактивный workflow и triage не
+получают других прав токена раннера. Авторевью читает `contents` и `issues`, а
 `pull-requests: write` использует только для реакции и публикации комментария;
-без этого права OpenCode Action получает HTTP 403. Lighthouse читает содержимое
-и получает `issues: write`, потому что именно он создаёт или обновляет задачу;
-прав на коммиты и pull request у него нет.
+без этого права OpenCode Action получает HTTP 403. Lighthouse получает
+`contents: write`, `pull-requests: write` и `issues: write`: он всегда создаёт
+или обновляет задачу по измерению и может открыть связанный PR только для
+небольшой однозначной правки. Мержить PR ему запрещено.
 
 Все OpenCode-workflow используют `actions/checkout@v7`. Сторонний OpenCode
 Action закреплён на полном SHA проверенной ревизии; обновление этой зависимости
