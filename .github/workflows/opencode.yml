@@ -8,25 +8,34 @@ on:
 
 jobs:
   opencode:
-    if: |
-      contains(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, '/opencode')
+    if: >-
+      github.event.comment.user.type != 'Bot' &&
+      github.event.comment.user.login != 'opencode-agent[bot]' &&
+      contains(
+        fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+        github.event.comment.author_association
+      ) &&
+      (
+        github.event.comment.body == '/oc' ||
+        startsWith(github.event.comment.body, '/oc ')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           persist-credentials: false
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         with:
           model: ollama-cloud/kimi-k2.7-code
-          mentions: /opencode,/oc
+          agent: build
+          mentions: /oc
           share: false

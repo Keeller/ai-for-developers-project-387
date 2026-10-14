@@ -180,9 +180,61 @@ jscpd и Vitest Coverage в каталог `reports`. Основная точк�
 
 ## Агент в GitHub
 
-OpenCode Agent запускается в GitHub Actions по новым комментариям с командами
-`/opencode` или `/oc`. События, фильтр, минимальные права, модель и порядок
-ручной проверки описаны в
+OpenCode Agent работает внутри GitHub Actions. Все workflow используют модель
+`ollama-cloud/kimi-k2.7-code`; это единственная модель, объявленная для
+проектного провайдера Ollama Cloud. `variant` не задаётся: у кастомной модели
+нет объявленных вариантов, а неизвестное имя варианта приводит к ошибке выбора
+модели. Для аналитических задач используется read-only агент `plan`, которому
+запрещены `edit`, `bash` и запуск субагентов через `task`; для задач с
+разрешёнными изменениями используется `build`.
+
+| Workflow                                                               | Событие и доступ                                                                                                   | Агент   | Назначение                                                       | Прогоны                                                                                                                          |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| [`opencode.yml`](.github/workflows/opencode.yml)                       | Новый комментарий в issue, PR или diff; только `OWNER`, `MEMBER`, `COLLABORATOR`; команда строго `/oc` или `/oc …` | `build` | Ответ, план или изменение по явной команде доверенного участника | [OpenCode agent](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode.yml)                        |
+| [`opencode-triage.yml`](.github/workflows/opencode-triage.yml)         | Новая issue от `OWNER`, `MEMBER` или `COLLABORATOR`                                                                | `plan`  | Read-only технический разбор пользовательской жалобы             | [OpenCode issue triage](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-triage.yml)          |
+| [`opencode-review.yml`](.github/workflows/opencode-review.yml)         | Новый или обновлённый недрафтовый PR доверенного участника из этого же репозитория                                 | `plan`  | Read-only проверка изменений по проектным критериям              | [OpenCode pull request review](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-review.yml)   |
+| [`lighthouse-schedule.yml`](.github/workflows/lighthouse-schedule.yml) | Ежедневно в 06:17 `Europe/Moscow` или вручную участником с write-доступом                                          | `build` | Lighthouse, artifact и создание/обновление issue по находке      | [Scheduled Lighthouse audit](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/lighthouse-schedule.yml) |
+
+Пользовательские события от bot-аккаунтов и отдельно от OpenCode App
+отсекаются в каждом workflow до запуска агента. Это исключает петлю, когда
+ответ приложения снова будит workflow. Системное событие `schedule` разрешено
+явно: его `github.actor` обозначает последнего редактора cron, а не инициатора
+запуска, поэтому фильтрация по actor могла бы отключить расписание после
+bot-обновления. Для интерактивного вызова параметр `mentions` явно равен `/oc`;
+команда `/opencode` отключена. В публичном репозитории вызвать агента могут
+только владелец, участник организации или collaborator. Ручной запуск
+Lighthouse дополнительно ограничен штатным write-доступом GitHub Actions и
+фильтром bot-аккаунтов.
+
+Права выдаются каждому workflow отдельно. Интерактивный workflow и triage
+получают только `id-token: write`. Авторевью читает `contents` и `issues`, а
+`pull-requests: write` использует только для реакции и публикации комментария;
+без этого права OpenCode Action получает HTTP 403. Lighthouse читает содержимое
+и получает `issues: write`, потому что именно он создаёт или обновляет задачу;
+прав на коммиты и pull request у него нет.
+
+Все OpenCode-workflow используют `actions/checkout@v7`. Сторонний OpenCode
+Action закреплён на полном SHA проверенной ревизии; обновление этой зависимости
+должно проходить отдельным PR и обычным CI/авторевью.
+
+Репозиторий публичный, поэтому публикация OpenCode-сессий осознанно отключена:
+во всех вызовах задано `share: false`. Ссылка на сессию не раскрывает контекст
+issue, diff, промпт или прочитанные агентом файлы. Ключ Ollama Cloud находится
+только в секрете `OLLAMA_API_KEY`.
+
+### Самооценка агентного процесса
+
+- С первого прохода заработали интерактивный `/oc explain`, автоматический
+  triage и ручной Lighthouse-прогон с artifact и задачей по находке.
+- Цикл issue → pull request → два вида ревью потребовал дополнительных
+  комментариев и правок в той же ветке; это подтвердило, что обратная связь
+  доходит до агента, но первоначальный результат не всегда достаточен.
+- Расписание Lighthouse потребовало нескольких диагностических итераций.
+  Workflow и ручной запуск исправны, но во время проверки GitHub не создавал
+  события `schedule`; итоговое ежедневное расписание оставлено в `main`, а
+  ограничение зафиксировано как внешняя доставка события GitHub.
+
+Подробные правила, секреты и сценарий ручной проверки описаны в
 [`docs/agents/opencode-github.md`](docs/agents/opencode-github.md).
 
 ## Документы продукта

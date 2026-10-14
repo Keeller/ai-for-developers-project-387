@@ -12,12 +12,16 @@ concurrency:
 
 jobs:
   audit:
+    if: >-
+      github.event_name == 'schedule' ||
+      (
+        !endsWith(github.actor, '[bot]') &&
+        github.actor != 'opencode-agent'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      id-token: write
-      contents: write
-      pull-requests: write
+      contents: read
       issues: write
     env:
       PUBLIC_APP_URL: ${{ vars.PUBLIC_APP_URL }}
@@ -136,12 +140,13 @@ jobs:
         id: opencode
         continue-on-error: true
         timeout-minutes: 5
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@77fc88c8ade8e5a620ebbe1197f3a572d29ae91a
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: ollama-cloud/kimi-k2.7-code
+          agent: build
           use_github_token: true
           share: false
           prompt: |

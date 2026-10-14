@@ -15,4 +15,13 @@
       },
     },
   },
+  "agent": {
+    "plan": {
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "task": "deny",
+      },
+    },
+  },
 }
