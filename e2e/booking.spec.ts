@@ -86,14 +86,15 @@ test('TC-E2E-09: конкурентное Бронирование другог�
   await makeEveryDayAvailable(request)
 
   const secondGuestPage = await context.newPage()
-  await openBookingForm(page, {
+  const shortCallSlot = await openBookingForm(page, {
     publicId: 'short-call',
     name: 'Короткий разговор',
   })
-  await openBookingForm(secondGuestPage, {
+  const longCallSlot = await openBookingForm(secondGuestPage, {
     publicId: 'long-call',
     name: 'Длинный разговор',
   })
+  expect(longCallSlot.guestLocalDate).toBe(shortCallSlot.guestLocalDate)
 
   await submitBooking(page, {
     name: 'Анна',
@@ -110,7 +111,11 @@ test('TC-E2E-09: конкурентное Бронирование другог�
   await expect(
     secondGuestPage.getByText('Слот уже недоступен. Выберите другой.'),
   ).toBeVisible()
-  const refreshedDay = secondGuestPage.locator('section').first()
+  const refreshedDay = secondGuestPage.locator('section').filter({
+    has: secondGuestPage.getByRole('heading', {
+      name: shortCallSlot.guestLocalDate,
+    }),
+  })
   await expect(
     refreshedDay.getByRole('button', { name: /^09:00 / }),
   ).toHaveCount(0)
