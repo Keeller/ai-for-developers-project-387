@@ -107,9 +107,15 @@ export async function openBookingForm(
     .getByRole('button', { name: new RegExp(`^${start} `) })
     .first()
   await expect(slot).toBeVisible()
+  const guestLocalDate = await slot
+    .locator('xpath=ancestor::section[1]')
+    .getByRole('heading')
+    .innerText()
   await slot.focus()
   await slot.press('Enter')
   await expect(page).toHaveURL(new RegExp(`/book/${publicId}$`))
+
+  return { guestLocalDate }
 }
 
 export async function submitBooking(
