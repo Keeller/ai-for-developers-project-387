@@ -145,7 +145,7 @@ jobs:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: ollama-cloud/kimi-k2.7-code
+          model: ollama-cloud/glm-5.3-flash
           agent: build
           use_github_token: true
           share: false
