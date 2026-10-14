@@ -29,7 +29,7 @@ jobs:
         env:
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         with:
-          model: ollama-cloud/kimi-k2.7-code
+          model: ollama-cloud/glm-5.3-flash
           agent: plan
           share: false
           prompt: |

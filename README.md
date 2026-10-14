@@ -180,10 +180,12 @@ jscpd и Vitest Coverage в каталог `reports`. Основная точк�
 
 ## Агент в GitHub
 
-OpenCode Agent работает внутри GitHub Actions. Все workflow используют модель
-`ollama-cloud/kimi-k2.7-code`; это единственная модель, объявленная для
-проектного провайдера Ollama Cloud. `variant` не задаётся: у кастомной модели
-нет объявленных вариантов, а неизвестное имя варианта приводит к ошибке выбора
+OpenCode Agent работает внутри GitHub Actions. Для рутинного triage и разбора
+Lighthouse используется более экономичная `ollama-cloud/glm-5.3-flash`; для
+интерактивных изменений и ревью кода — специализированная
+`ollama-cloud/kimi-k2.7-code`. Обе модели объявлены в проектном провайдере
+Ollama Cloud. `variant` не задаётся: у кастомных описаний моделей нет
+объявленных вариантов, а неизвестное имя варианта приводит к ошибке выбора
 модели. Для аналитических задач используется read-only агент `plan`, которому
 запрещены `edit`, `bash` и запуск субагентов через `task`; для задач с
 разрешёнными изменениями используется `build`.
@@ -191,9 +193,9 @@ OpenCode Agent работает внутри GitHub Actions. Все workflow и�
 | Workflow                                                               | Событие и доступ                                                                                                   | Модель                        | Агент   | Назначение                                                       | Прогоны                                                                                                                          |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | [`opencode.yml`](.github/workflows/opencode.yml)                       | Новый комментарий в issue, PR или diff; только `OWNER`, `MEMBER`, `COLLABORATOR`; команда строго `/oc` или `/oc …` | `ollama-cloud/kimi-k2.7-code` | `build` | Ответ, план или изменение по явной команде доверенного участника | [OpenCode agent](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode.yml)                        |
-| [`opencode-triage.yml`](.github/workflows/opencode-triage.yml)         | Новая issue от `OWNER`, `MEMBER` или `COLLABORATOR`                                                                | `ollama-cloud/kimi-k2.7-code` | `plan`  | Read-only технический разбор пользовательской жалобы             | [OpenCode issue triage](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-triage.yml)          |
+| [`opencode-triage.yml`](.github/workflows/opencode-triage.yml)         | Новая issue от `OWNER`, `MEMBER` или `COLLABORATOR`                                                                | `ollama-cloud/glm-5.3-flash`  | `plan`  | Read-only технический разбор пользовательской жалобы             | [OpenCode issue triage](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-triage.yml)          |
 | [`opencode-review.yml`](.github/workflows/opencode-review.yml)         | Новый или обновлённый недрафтовый PR доверенного участника из этого же репозитория                                 | `ollama-cloud/kimi-k2.7-code` | `plan`  | Read-only проверка изменений по проектным критериям              | [OpenCode pull request review](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/opencode-review.yml)   |
-| [`lighthouse-schedule.yml`](.github/workflows/lighthouse-schedule.yml) | Ежедневно в 06:17 `Europe/Moscow` или вручную участником с write-доступом                                          | `ollama-cloud/kimi-k2.7-code` | `build` | Lighthouse, artifact и создание/обновление issue по находке      | [Scheduled Lighthouse audit](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/lighthouse-schedule.yml) |
+| [`lighthouse-schedule.yml`](.github/workflows/lighthouse-schedule.yml) | Ежедневно в 06:17 `Europe/Moscow` или вручную участником с write-доступом                                          | `ollama-cloud/glm-5.3-flash`  | `build` | Lighthouse, artifact и создание/обновление issue по находке      | [Scheduled Lighthouse audit](https://github.com/Keeller/ai-for-developers-project-387/actions/workflows/lighthouse-schedule.yml) |
 
 Пользовательские события от bot-аккаунтов и отдельно от OpenCode App
 отсекаются в каждом workflow до запуска агента. Это исключает петлю, когда
