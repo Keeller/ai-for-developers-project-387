@@ -66,10 +66,12 @@ Workflow `.github/workflows/opencode-review.yml` запускается для �
 request. Проектный `prompt` требует проверить постановку, контракт, использование
 сгенерированного SDK, серверные правила, тесты, типы и безопасность.
 
-Для чтения кода и контекста используются права `contents: read`, `issues: read`,
-`pull-requests: read` и токен раннера через `use_github_token: true`. Агент
+Для чтения кода и контекста используются права `contents: read`, `issues: read`
+и токен раннера через `use_github_token: true`. Право `pull-requests: write`
+нужно OpenCode Action для реакции и публикации результата в обсуждении PR;
+без него GitHub отвечает `403 Resource not accessible by integration`. Агент
 `plan` и репозиторная конфигурация запрещают изменения файлов и shell-команды;
-workflow не может изменять код или самостоятельно сливать pull request.
+workflow не получает `contents: write` и не меняет код.
 
 Workflow явно пропускает только авторов с `author_association` `OWNER`,
 `MEMBER` или `COLLABORATOR`. После этого OpenCode выполняет собственную
