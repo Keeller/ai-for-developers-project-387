@@ -21,9 +21,14 @@
 
 ## Права и учётные данные
 
-Workflow получает только `id-token: write`. OIDC-токен обменивается на токен
-установленного GitHub App, поэтому токен раннера не сохраняется в рабочей копии:
-`actions/checkout` использует `persist-credentials: false`.
+Все агентные workflow получают `id-token: write` для OIDC-аутентификации.
+Интерактивный workflow и автотриаж не получают других прав токена раннера.
+Авторевью дополнительно получает только права чтения контекста и публикации
+результата в pull request. Scheduled Lighthouse получает права записи в
+contents, pull requests и issues, потому что создаёт задачу по измерению и может
+открыть связанный pull request для небольшой однозначной правки. Токен раннера
+не сохраняется в рабочей копии: `actions/checkout` использует
+`persist-credentials: false`.
 
 Модели `ollama-cloud/glm-5.3-flash` и `ollama-cloud/kimi-k2.7-code` работают
 через Ollama Cloud. Экономичная GLM используется для рутинного triage и
@@ -71,8 +76,9 @@ GitHub принудительно урезает его `GITHUB_TOKEN` до read
 контракт, использование сгенерированного SDK, серверные правила, тесты, типы и
 безопасность.
 
-Для чтения кода и контекста используются права `contents: read`, `issues: read`
-и токен раннера через `use_github_token: true`. Право `pull-requests: write`
+Для чтения кода и контекста используются права `id-token: write`,
+`contents: read`, `issues: read` и токен раннера через
+`use_github_token: true`. Право `pull-requests: write`
 нужно OpenCode Action для реакции и публикации результата в обсуждении PR;
 без него GitHub отвечает `403 Resource not accessible by integration`. Агент
 `plan` и репозиторная конфигурация запрещают изменения файлов и shell-команды;
