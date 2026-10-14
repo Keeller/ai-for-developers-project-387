@@ -4,9 +4,6 @@ on:
   schedule:
     - cron: '17 6 * * *'
       timezone: Europe/Moscow
-    # Temporary verification window; remove after the first event=schedule run.
-    - cron: '30 23 14 10 *'
-      timezone: Europe/Moscow
   workflow_dispatch:
 
 concurrency:
