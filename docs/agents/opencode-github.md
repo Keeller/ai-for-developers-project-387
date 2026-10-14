@@ -63,8 +63,11 @@ Workflow `.github/workflows/opencode-triage.yml` запускается толь
 
 Workflow `.github/workflows/opencode-review.yml` запускается для событий
 `opened`, `synchronize`, `reopened` и `ready_for_review` у недрафтовых pull
-request. Проектный `prompt` требует проверить постановку, контракт, использование
-сгенерированного SDK, серверные правила, тесты, типы и безопасность.
+request из этого же репозитория. Pull request из fork остаётся на ручном ревью:
+GitHub принудительно урезает его `GITHUB_TOKEN` до read-only, поэтому OpenCode не
+смог бы опубликовать результат. Проектный `prompt` требует проверить постановку,
+контракт, использование сгенерированного SDK, серверные правила, тесты, типы и
+безопасность.
 
 Для чтения кода и контекста используются права `contents: read`, `issues: read`
 и токен раннера через `use_github_token: true`. Право `pull-requests: write`

@@ -8,6 +8,7 @@ jobs:
   review:
     if: >-
       github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot' &&
       github.event.pull_request.user.login != 'opencode-agent[bot]' &&
       contains(
